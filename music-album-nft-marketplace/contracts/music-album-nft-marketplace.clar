@@ -77,3 +77,57 @@
         )
     )
 )
+
+;; New function 2: Transfer with royalty payment to original artist
+(define-public (transfer-with-royalty (token-id uint) (sender principal) (recipient principal) (sale-price uint))
+    (let
+        (
+            (album-data (unwrap! (map-get? album-details token-id) ERR-NOT-FOUND))
+            (artist (get artist album-data))
+            (royalty-rate (get artist-royalty album-data))
+            (royalty-amount (/ (* sale-price royalty-rate) u100))
+            (seller-amount (- sale-price royalty-amount))
+            (current-sales (default-to {total-sales: u0, total-royalties-paid: u0, last-sale-price: u0} 
+                                     (map-get? album-sales token-id)))
+        )
+        (asserts! (is-eq tx-sender sender) ERR-NOT-AUTHORIZED)
+        (asserts! (is-some (nft-get-owner? music-album token-id)) ERR-NOT-FOUND)
+        (asserts! (> sale-price u0) ERR-INVALID-PARAMS)
+        
+        ;; Transfer the NFT
+        (try! (nft-transfer? music-album token-id sender recipient))
+        
+        ;; Pay royalty to artist (if artist is different from seller)
+        (if (not (is-eq artist sender))
+            (begin
+                (try! (stx-transfer? royalty-amount sender artist))
+                ;; Update sales statistics
+                (map-set album-sales token-id {
+                    total-sales: (+ (get total-sales current-sales) u1),
+                    total-royalties-paid: (+ (get total-royalties-paid current-sales) royalty-amount),
+                    last-sale-price: sale-price
+                })
+            )
+            ;; If artist is selling, just update sales count
+            (map-set album-sales token-id {
+                total-sales: (+ (get total-sales current-sales) u1),
+                total-royalties-paid: (get total-royalties-paid current-sales),
+                last-sale-price: sale-price
+            })
+        )
+        
+        (ok {
+            royalty-paid: royalty-amount,
+            seller-received: seller-amount,
+            new-owner: recipient
+        })
+    )
+)
+
+(define-public (transfer (token-id uint) (sender principal) (recipient principal))
+    (begin
+        (asserts! (is-eq tx-sender sender) ERR-NOT-AUTHORIZED)
+        (asserts! (is-some (nft-get-owner? music-album token-id)) ERR-NOT-FOUND)
+        (nft-transfer? music-album token-id sender recipient)
+    )
+)

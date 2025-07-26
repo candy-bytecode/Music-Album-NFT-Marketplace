@@ -1,26 +1,6 @@
 ;; Music Album NFT Contract
 ;; NFT contract for music albums with track listing and artist royalties
 
-;; Define the NFT trait locally with a unique name
-(define-trait music-nft-trait
-    (
-        ;; Last token ID, limited to uint range
-        (get-last-token-id () (response uint uint))
-
-        ;; URI for metadata associated with the token
-        (get-token-uri (uint) (response (optional (string-ascii 256)) uint))
-
-        ;; Owner of a given token identifier
-        (get-owner (uint) (response (optional principal) uint))
-
-        ;; Transfer from the sender to a new principal
-        (transfer (uint principal principal) (response bool uint))
-    )
-)
-
-;; Implement the NFT trait
-(impl-trait .music-nft-trait)
-
 (define-non-fungible-token music-album uint)
 
 (define-data-var last-token-id uint u0)

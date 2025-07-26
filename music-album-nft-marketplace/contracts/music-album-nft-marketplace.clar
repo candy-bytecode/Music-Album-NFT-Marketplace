@@ -1,11 +1,8 @@
 ;; Music Album NFT Contract
 ;; NFT contract for music albums with track listing and artist royalties
 
-;; Import the NFT trait
-(use-trait nft-trait 'SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.nft-trait.nft-trait)
-
-;; Define the NFT trait locally for development
-(define-trait nft-trait
+;; Define the NFT trait locally with a unique name
+(define-trait music-nft-trait
     (
         ;; Last token ID, limited to uint range
         (get-last-token-id () (response uint uint))
@@ -22,7 +19,7 @@
 )
 
 ;; Implement the NFT trait
-(impl-trait .nft-trait)
+(impl-trait .music-nft-trait)
 
 (define-non-fungible-token music-album uint)
 
